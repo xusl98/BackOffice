@@ -392,7 +392,7 @@
         });
 
         async function fetchCourseList(userApiKey) {
-            const url = 'https://localhost:7294/BackOffice/GetPriceRanges';
+            const url = 'https://golfclappapi.azurewebsites.net//BackOffice/GetPriceRanges';
             const loadingMessage = document.getElementById('loading-message');
             const courseListEl = document.getElementById('course-list');
             
@@ -631,7 +631,7 @@
                     courseId: currentCourseData.course.id
                 };
                 
-                const url = 'https://localhost:7294/BackOffice/UpdatePriceRange';
+                const url = 'https://golfclappapi.azurewebsites.net//BackOffice/UpdatePriceRange';
                 const apiKey = localStorage.getItem('apiKey');
                 
                 try {
@@ -672,7 +672,7 @@
         }
 
         async function deletePriceRange(priceRangeId) {
-            const url = `https://localhost:7294/BackOffice/DeletePriceRange?id=${priceRangeId}`;
+            const url = `https://golfclappapi.azurewebsites.net//BackOffice/DeletePriceRange?id=${priceRangeId}`;
             const apiKey = localStorage.getItem('apiKey');
 
             try {
