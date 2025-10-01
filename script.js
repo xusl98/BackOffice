@@ -28,6 +28,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const usersNextBtn = document.getElementById('usersNextBtn');
     const usersPageInfo = document.getElementById('usersPageInfo');
     
+    // API Key
+    const apiKey = localStorage.getItem('apiKey');
+    const API_URL_BASE = 'https://golfclappapi.azurewebsites.net/BackOffice';
+
+    // --- UTILITY FUNCTION FOR REFRESHING DATA ---
+    // This is the new function to refresh all course data after an update
+    const refreshCourseData = async () => {
+        if (currentCourseData) {
+            await fetchCourseList(apiKey, currentCourseData.course.id);
+        } else {
+            // Fallback: If no course is selected, just reload the list as before
+            await fetchCourseList(apiKey);
+        }
+    }
+
     // --- TAB SWITCHING LOGIC ---
     const switchTab = (tabId) => {
         tabButtons.forEach(button => {
@@ -60,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchUsers = async () => {
         try {
             const searchTerm = usersSearchInput.value;
-            const apiKey = localStorage.getItem('apiKey');
-            const url = `https://golfclappapi.azurewebsites.net/BackOffice/Users?pageNumber=${usersCurrentPage}&pageSize=${usersPageSize}&searchTerm=${searchTerm}`;
+            const url = `${API_URL_BASE}/Users?pageNumber=${usersCurrentPage}&pageSize=${usersPageSize}&searchTerm=${searchTerm}`;
             
             const response = await fetch(url, {
                 headers: {
@@ -130,8 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- PRICES TAB FUNCTIONS AND LISTENERS ---
-    const fetchCourseList = async (userApiKey) => {
-        const url = 'https://golfclappapi.azurewebsites.net/BackOffice/GetPriceRanges';
+    // Added optional parameter to select a specific course after re-fetch
+    const fetchCourseList = async (userApiKey, courseIdToSelect = null) => {
+        const url = `${API_URL_BASE}/GetPriceRanges`;
         
         try {
             const response = await fetch(url, {
@@ -145,19 +160,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 loadingMessage.style.display = 'none';
                 
+                // Clear existing course list
+                courseListEl.innerHTML = '';
+                
                 if (data.length > 0) {
-                    currentCourseData = data[0];
+                    let courseToDisplay = courseIdToSelect 
+                        ? data.find(c => c.course.id === courseIdToSelect) 
+                        : data[0]; // Select requested course or first one
+                    
+                    if (!courseToDisplay) {
+                        courseToDisplay = data[0]; // Fallback if requested course isn't found
+                    }
+
+                    currentCourseData = courseToDisplay;
                     document.getElementById('selected-course-name').textContent = `Price Ranges for: ${currentCourseData.course.name}`;
                     renderCalendar();
+                } else {
+                    currentCourseData = null; // No courses to display
+                    document.getElementById('selected-course-name').textContent = 'No Courses Available';
+                    renderCalendar(); // Render empty calendar
                 }
 
                 data.forEach(courseData => {
                     const listItem = document.createElement('li');
                     listItem.classList.add('course-list-item');
+                    // Add 'active' class to the currently selected course
+                    if (currentCourseData && courseData.course.id === currentCourseData.course.id) {
+                         listItem.classList.add('active');
+                    }
                     listItem.textContent = courseData.course.name;
                     listItem.dataset.courseId = courseData.course.id;
                     listItem.addEventListener('click', () => {
                         selectCourseAndRenderCalendar(courseData);
+                        // Also update the active class on click
+                        courseListEl.querySelectorAll('.course-list-item').forEach(item => item.classList.remove('active'));
+                        listItem.classList.add('active');
                     });
                     courseListEl.appendChild(listItem);
                 });
@@ -174,7 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function selectCourseAndRenderCalendar(courseData) {
         currentCourseData = courseData;
         document.getElementById('selected-course-name').textContent = `Price Ranges for: ${courseData.course.name}`;
-        currentMonth = new Date().getMonth();
+        // Reset month and year to current month/year when selecting a new course
+        currentMonth = new Date().getMonth(); 
         currentYear = new Date().getFullYear();
         renderCalendar();
         
@@ -204,11 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         displayEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
 
-        while (gridEl.children.length > 7) {
+        // Clear only the days, leave the day names (first 7 children)
+        while (gridEl.children.length > 7) { 
             gridEl.removeChild(gridEl.lastChild);
         }
 
-        const firstDayOfWeek = firstDay.getDay();
+        // Adjust for Sunday=0 to match the 7-column grid starting Monday or whatever
+        const firstDayOfWeek = (firstDay.getDay() + 6) % 7; // Monday = 0, Sunday = 6
         for (let i = 0; i < firstDayOfWeek; i++) {
             const blankDay = document.createElement('div');
             blankDay.classList.add('day');
@@ -283,9 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const priceKey = range.price.toString();
                 const color = stringToHslColor(priceKey, 70, 50);
 
-                const startDate = new Date(range.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const endDate = new Date(range.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
+                // Reformatting to be more user-friendly
+                const startDate = new Date(range.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric'}) + ' ' + new Date(range.startDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const endDate = new Date(range.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric'}) + ' ' + new Date(range.endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
                 listItem.innerHTML = `
                     <span class="color-dot" style="background-color: ${color};"></span>
                     <strong>€${(range.price / 100).toFixed(2)}</strong>: ${startDate} - ${endDate}
@@ -326,6 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('endDate').value = tomorrow.toISOString().split('T')[0];
             document.getElementById('endTime').value = '23:59';
         } else {
+            // Note: If the backend returns ISO 8601 strings without 'Z' at the end for UTC, 
+            // the Date object might interpret them as local time.
+            // Assuming they are UTC/Zoned for consistency with T00:00:00.000Z format used in payload
             const startDateObj = new Date(priceRange.startDate);
             const endDateObj = new Date(priceRange.endDate);
             
@@ -353,11 +397,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTimeEnd = document.getElementById('endTime').value;
             let priceRangeId = document.getElementById('editPriceRangeId').value;
             
+            // Format to ISO 8601 with Z for UTC assumption
             const updatedStartDate = `${newDateStart}T${newTimeStart}:00.000Z`;
             const updatedEndDate = `${newDateEnd}T${newTimeEnd}:00.000Z`;
             
             if (isNew) {
-                priceRangeId = crypto.randomUUID();
+                // Generate a new ID for creation
+                priceRangeId = crypto.randomUUID(); 
             }
 
             const updateData = {
@@ -368,8 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 courseId: currentCourseData.course.id
             };
             
-            const url = 'https://golfclappapi.azurewebsites.net//BackOffice/UpdatePriceRange';
-            const apiKey = localStorage.getItem('apiKey');
+            const url = `${API_URL_BASE}/UpdatePriceRange`;
             
             try {
                 const response = await fetch(url, {
@@ -385,18 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Price range saved successfully!');
                     closeModal();
                     
-                    if (isNew) {
-                        currentCourseData.priceRanges.push(updateData);
-                    } else {
-                        const index = currentCourseData.priceRanges.findIndex(p => p.id === priceRangeId);
-                        if (index !== -1) {
-                            currentCourseData.priceRanges[index].price = updatedPrice;
-                            currentCourseData.priceRanges[index].startDate = updatedStartDate;
-                            currentCourseData.priceRanges[index].endDate = updatedEndDate;
-                        }
-                    }
-                    
-                    renderCalendar();
+                    // --- REFRESH DATA AFTER SUCCESSFUL UPDATE ---
+                    await refreshCourseData(); 
+                    // ------------------------------------------
+
                 } else {
                     const error = await response.text();
                     alert('Failed to save price range: ' + error);
@@ -409,9 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function deletePriceRange(priceRangeId) {
-        const url = `https://golfclappapi.azurewebsites.net//BackOffice/DeletePriceRange?id=${priceRangeId}`;
-        const apiKey = localStorage.getItem('apiKey');
-
+        const url = `${API_URL_BASE}/DeletePriceRange?id=${priceRangeId}`;
+        
         try {
             const response = await fetch(url, {
                 method: 'DELETE',
@@ -424,9 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Price range deleted successfully!');
                 closeModal();
                 
-                currentCourseData.priceRanges = currentCourseData.priceRanges.filter(p => p.id !== priceRangeId);
-                
-                renderCalendar();
+                // --- REFRESH DATA AFTER SUCCESSFUL DELETION ---
+                await refreshCourseData();
+                // ----------------------------------------------
+
             } else {
                 const error = await response.text();
                 alert('Failed to delete price range: ' + error);
@@ -486,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial page load logic
-    const apiKey = localStorage.getItem('apiKey');
     if (!apiKey) {
         alert('You must be logged in to view this page.');
         window.location.href = 'login.html';
