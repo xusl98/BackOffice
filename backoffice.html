@@ -343,8 +343,30 @@
                         <ul id="price-summary-list" class="price-summary-list">
                             <li>Select a course to view prices.</li>
                         </ul>
+                        <br>
+                        <br>
                         <button id="create-new-btn">Create New Price Range</button>
+                        <br>
+                        <br>
+                        <button id="create-daily-ranges-btn">
+                            Crear rangos de precios por día
+                        </button>
+                        <br>
+                        <br>
+                        <button id="delete-daily-ranges-btn">
+                            Eliminar varios rangos
+                        </button>
                     </div>
+                    <!-- <div class="price-summary-card">
+                        <h3>Current Month Prices</h3>
+                        <ul id="price-summary-list" class="price-summary-list">
+                            <li>Select a course to view prices.</li>
+                        </ul>
+                        <button id="create-new-btn">Create New Price Range</button>
+                        <button id="create-daily-ranges-btn" style="margin-top: 10px; background-color: #28a745; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; display: block; width: 100%;">
+                            Crear rangos de precios por día
+                        </button>
+                    </div> -->
                  </div>
             </div>
         </div>
@@ -407,6 +429,67 @@
                     <button type="submit" class="save-btn">Save Changes</button>
                     <button type="button" class="delete-btn" id="delete-btn">Delete</button>
                     <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="dailyRangeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeDailyRangeModal()">&times;</span>
+            <h2>Crear Rangos Diarios para <span id="dailyRangeCourseName"></span></h2>
+            <form id="dailyRangeForm" class="modal-form">
+                <p>
+                    <label for="dailyStartDate">Día inicio:</label>
+                    <input type="date" id="dailyStartDate" name="dailyStartDate" required>
+                </p>
+                <p>
+                    <label for="dailyEndDate">Día fin:</label>
+                    <input type="date" id="dailyEndDate" name="dailyEndDate" required>
+                </p>
+                <p>
+                    <label for="dailyStartTime">Hora inicio:</label>
+                    <input type="time" id="dailyStartTime" name="dailyStartTime" required>
+                </p>
+                <p>
+                    <label for="dailyEndTime">Hora fin:</label>
+                    <input type="time" id="dailyEndTime" name="dailyEndTime" required>
+                </p>
+                <p>
+                    <label for="dailyPrice">Precio (€):</label>
+                    <input type="number" id="dailyPrice" name="dailyPrice" step="0.01" required>
+                </p>
+                <div class="modal-buttons" style="justify-content: flex-end;">
+                    <button type="submit" class="save-btn" style="width: auto;">Crear Rangos</button>
+                    <button type="button" class="cancel-btn" onclick="closeDailyRangeModal()" style="width: auto;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="multiDeleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeMultiDeleteModal()">&times;</span>
+            <h2>Eliminar Rangos Múltiples</h2>
+            <p>Selecciona las fechas para ver y eliminar los rangos de precios de <strong id="multiDeleteCourseName"></strong>.</p>
+            <form id="multiDeleteForm" class="modal-form">
+                <p>
+                    <label for="multiDeleteStartDate">Día inicio:</label>
+                    <input type="date" id="multiDeleteStartDate" required>
+                </p>
+                <p>
+                    <label for="multiDeleteEndDate">Día fin:</label>
+                    <input type="date" id="multiDeleteEndDate" required>
+                </p>
+                <p>
+                    <label>Rangos Encontrados:</label>
+                    <ul id="rangesToDeleteList" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd;">
+                        <li>Selecciona un rango de fechas.</li>
+                    </ul>
+                </p>
+                <div class="modal-buttons" style="justify-content: space-between;">
+                    <button type="button" class="delete-btn" id="confirmMultiDeleteBtn">Eliminar Seleccionados</button>
+                    <button type="button" class="cancel-btn" onclick="closeMultiDeleteModal()">Cancelar</button>
                 </div>
             </form>
         </div>
