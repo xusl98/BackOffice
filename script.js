@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Key
     const apiKey = localStorage.getItem('apiKey');
-    const API_URL_BASE = 'https://localhost:7294/BackOffice';
-    // const API_URL_BASE = 'https://golfclappapi.azurewebsites.net/BackOffice';
+    // const API_URL_BASE = 'https://localhost:7294/BackOffice';
+    const API_URL_BASE = 'https://golfclappapi.azurewebsites.net/BackOffice';
 
     // --- UTILITY FUNCTION FOR REFRESHING DATA ---
     const refreshCourseData = async () => {
